@@ -10,7 +10,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ================= CONFIG =================
 const PORT = process.env.PORT || 3000;
 
 // ================= APPS =================
@@ -21,16 +20,14 @@ const APPS = {
   4: { nome: "WhatsApp GB Pro", preco: 39.9, file: "whatsapp.apk" }
 };
 
-// ================= MEMÓRIA =================
-const pedidos = {}; 
-// { txId: { appId, status } }
+const pedidos = {};
 
-// ================= HEALTH CHECK =================
+// ================= ROOT =================
 app.get("/", (req, res) => {
   res.send("VaultCore Backend ONLINE 🚀");
 });
 
-// ================= 1. CRIAR PIX =================
+// ================= PIX =================
 app.post("/pix", async (req, res) => {
   try {
     const { appId } = req.body;
@@ -46,53 +43,41 @@ app.post("/pix", async (req, res) => {
       "https://api.elitepaybr.com/api/v1/deposit",
       {
         amount: appData.preco,
+        description: `Compra ${appData.nome}`,
+        payerName: "Cliente VaultCore",
+        payerDocument: "12345678900",
         external_id: externalId
       },
       {
         headers: {
           "x-client-id": process.env.ELITEPAY_CLIENT_ID,
-          "x-client-secret": process.env.ELITEPAY_CLIENT_SECRET
+          "x-client-secret": process.env.ELITEPAY_CLIENT_SECRET,
+          "Content-Type": "application/json"
         }
       }
     );
 
-    console.log("🔥 ELITEPAY RESPONSE:", response.data);
+    console.log("🔥 ELITEPAY:", response.data);
 
-    // 🔥 AJUSTE AQUI (IMPORTANTE)
     const data = response.data;
 
-    const txId =
-      data.transactionId ||
-      data.id ||
-      data.txId;
+    const txId = data.transactionId;
 
-    const qrCode =
-      data.qrCode ||
-      data.qr_code ||
-      data.pix?.qrCode ||
-      data.pix?.qr_code;
+    let qrCode = data.qrcodeUrl;
+    const copiaCola = data.copyPaste;
 
-    const copiaCola =
-      data.copyPaste ||
-      data.pixCopyPaste ||
-      data.pix?.copyPaste ||
-      data.pix?.copiaCola;
-
-    if (!txId) {
-      return res.status(500).json({
-        error: "Transaction ID não veio",
-        raw: data
-      });
+    // 🔥 REMOVE "base64:"
+    if (qrCode?.startsWith("base64:")) {
+      qrCode = qrCode.replace("base64:", "");
     }
 
-    if (!qrCode || !copiaCola) {
+    if (!txId || !qrCode || !copiaCola) {
       return res.status(500).json({
         error: "Pix não gerado corretamente",
         raw: data
       });
     }
 
-    // salva pedido
     pedidos[txId] = {
       appId,
       status: "pending"
@@ -114,7 +99,7 @@ app.post("/pix", async (req, res) => {
   }
 });
 
-// ================= 2. VERIFICAR PAGAMENTO =================
+// ================= CHECK =================
 app.get("/check/:txId", async (req, res) => {
   try {
     const { txId } = req.params;
@@ -133,21 +118,9 @@ app.get("/check/:txId", async (req, res) => {
       }
     );
 
-    console.log("🔎 CHECK:", response.data);
+    const status = response.data.transaction?.transactionState;
 
-    const tx =
-      response.data.transaction ||
-      response.data;
-
-    const status =
-      tx.transactionState ||
-      tx.status;
-
-    if (
-      status === "COMPLETO" ||
-      status === "PAID" ||
-      status === "APPROVED"
-    ) {
+    if (status === "COMPLETO") {
       pedido.status = "paid";
       return res.json({ status: "paid" });
     }
@@ -155,12 +128,12 @@ app.get("/check/:txId", async (req, res) => {
     res.json({ status: "pending" });
 
   } catch (err) {
-    console.error("❌ ERRO CHECK:", err.message);
+    console.error(err.message);
     res.json({ status: "error" });
   }
 });
 
-// ================= 3. DOWNLOAD =================
+// ================= DOWNLOAD =================
 app.get("/download/:txId", (req, res) => {
   const { txId } = req.params;
 
