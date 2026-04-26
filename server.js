@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3000;
 
 // ================= APPS =================
 const APPS = {
-  1: { nome: "Bradesco Gold", preco: 79.9, file: "bradesco.apk" },
+  1: { nome: "Bradesco Gold", preco: 80.0, file: "bradesco.apk" },
   2: { nome: "MercadoGold", preco: 79.9, file: "mercado.apk" },
   3: { nome: "CNH Digital Pro", preco: 189.0, file: "cnh.apk" },
   4: { nome: "WhatsApp GB Pro", preco: 39.9, file: "whatsapp.apk" }
