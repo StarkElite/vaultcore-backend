@@ -17,7 +17,10 @@ const APPS = {
   1: { nome: "Bradesco Gold", preco: 80.0, file: "bradesco.apk" },
   2: { nome: "MercadoGold", preco: 85.0, file: "mercado.apk" },
   3: { nome: "CNH Digital Pro", preco: 189.0, file: "cnh.apk" },
-  4: { nome: "WhatsApp GB Pro", preco: 39.9, file: "whatsapp.apk" }
+  4: { nome: "WhatsApp GB Pro", preco: 39.9, file: "whatsapp.apk" },
+
+  // 🔥 PACK COMPLETO
+  99: { nome: "Acesso Completo", preco: 259.9, file: null }
 };
 
 const pedidos = {};
@@ -66,7 +69,6 @@ app.post("/pix", async (req, res) => {
     let qrCode = data.qrcodeUrl;
     const copiaCola = data.copyPaste;
 
-    // 🔥 REMOVE "base64:"
     if (qrCode?.startsWith("base64:")) {
       qrCode = qrCode.replace("base64:", "");
     }
@@ -146,6 +148,18 @@ app.get("/download/:txId", (req, res) => {
   }
 
   const appData = APPS[pedido.appId];
+
+  // 🔥 PACK COMPLETO
+  if (pedido.appId == 99) {
+    return res.json({
+      downloads: [
+        "/files/bradesco.apk",
+        "/files/mercado.apk",
+        "/files/cnh.apk",
+        "/files/whatsapp.apk"
+      ]
+    });
+  }
 
   res.download(`./files/${appData.file}`);
 });
