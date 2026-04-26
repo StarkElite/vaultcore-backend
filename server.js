@@ -20,7 +20,7 @@ const APPS = {
   4: { nome: "WhatsApp GB Pro", preco: 39.9, file: "whatsapp.apk" },
 
   // 🔥 PACK COMPLETO
-  99: { nome: "Acesso Completo", preco: 259.9, file: null }
+  99: { nome: "Acesso Completo", preco: 280.0, file: null }
 };
 
 const pedidos = {};
